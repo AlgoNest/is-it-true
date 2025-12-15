@@ -30,15 +30,15 @@
   </p>
 
   <!-- SEARCH -->
-  <form method="GET" class="max-w-2xl mx-auto flex gap-2">
+  <form method="post" class="max-w-2xl mx-auto flex gap-2">
     <input
-      name="q"
+      name="query"
       value="{{ query or '' }}"
       placeholder="Try: Airbnb, iPhone battery, Amazon delivery"
       class="flex-1 p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300"
       required
     >
-    <button class="bg-black text-white px-8 rounded-lg hover:bg-slate-800 transition">
+    <button class="bg-black text-white px-8 rounded-lg hover:bg-slate-800 transition" type="submit">
       Search
     </button>
   </form>
