@@ -25,41 +25,31 @@
   </h1>
 
   <p class="text-slate-600 max-w-2xl mx-auto mb-8">
-    Search real complaints from public forums.  
-    No reviews. No promotions. Just what users actually say.
+    Search real complaints from public forums.
   </p>
 
-  <!-- SEARCH -->
-  <form method="post" class="max-w-2xl mx-auto flex gap-2">
+  <form method="POST" class="max-w-2xl mx-auto flex gap-2">
     <input
       name="query"
       placeholder="Try: Airbnb, iPhone battery, Amazon delivery"
-      class="flex-1 p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300"
+      class="flex-1 p-4 rounded-lg border"
       required
     >
-    <button class="bg-black text-white px-8 rounded-lg hover:bg-slate-800 transition" type="submit">
+    <button type="submit"
+      class="bg-black text-white px-8 rounded-lg">
       Search
     </button>
   </form>
-
-  <!-- TRUST -->
-  <div class="flex justify-center gap-6 text-sm text-slate-500 mt-6">
-    <span>✔ Public sources</span>
-    <span>✔ No tracking</span>
-    <span>✔ No sign-up</span>
-  </div>
 </section>
 
 <!-- TOP AD -->
 <div class="max-w-4xl mx-auto px-6 mb-10">
   <div class="border rounded-lg py-6 text-center text-xs text-slate-400 bg-white">
     Advertisement
-    <!-- AdSense code -->
   </div>
 </div>
 
-{% if complaints %}
-<!-- RESULTS -->
+{% if complaints and complaints|length > 0 %}
 <section class="max-w-6xl mx-auto px-6 pb-16">
 
   <h2 class="text-2xl font-semibold mb-8">
@@ -67,12 +57,7 @@
     <span class="text-red-600">“{{ query }}”</span>
   </h2>
 
-  {% if complaints and complaints|length > 0 %}
-    {% for category, items in complaints|groupby("category") %}
-      ...
-      {% endfor %}
-  {% endif %}
-
+  {% for category, items in complaints|groupby("category") %}
   <div class="mb-12">
 
     <!-- CATEGORY HEADER -->
@@ -93,15 +78,13 @@
     <!-- COMPLAINT CARDS -->
     <div class="grid md:grid-cols-2 gap-4">
       {% for c in items %}
-      <div class="bg-white p-5 rounded-xl shadow-sm border hover:shadow-md transition">
-        <p class="font-semibold mb-2 leading-snug">
-          {{ c.title }}
-        </p>
+      <div class="bg-white p-5 rounded-xl shadow-sm border">
+        <p class="font-semibold mb-2">{{ c.title }}</p>
         <p class="text-sm text-slate-600 mb-3">
           {{ c.excerpt }}...
         </p>
         <a href="{{ c.url }}" target="_blank"
-           class="text-sm text-blue-600 hover:underline">
+           class="text-sm text-blue-600">
           View original source →
         </a>
       </div>
@@ -110,18 +93,14 @@
 
   </div>
   {% endfor %}
- {% endif %} 
-</section>
 
+</section>
+{% endif %}
 
 <!-- FOOTER -->
 <footer class="bg-white border-t">
-  <div class="max-w-6xl mx-auto px-6 py-8 text-xs text-slate-500 leading-relaxed">
-    <p>
-      ComplaintSearch aggregates publicly available user opinions from third-party
-      platforms for informational purposes only. It does not verify claims or
-      assert factual accuracy. All content links to original sources.
-    </p>
+  <div class="max-w-6xl mx-auto px-6 py-8 text-xs text-slate-500">
+    This site aggregates publicly available opinions for informational purposes only.
   </div>
 </footer>
 
