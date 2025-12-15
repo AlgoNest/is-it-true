@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complaint Search – See Real User Problems</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-50 text-slate-900">
+
+<!-- NAVBAR -->
+<header class="bg-white border-b">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+    <span class="font-bold text-lg">ComplaintSearch</span>
+    <span class="text-sm text-slate-500">Public opinions. No filters.</span>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="max-w-6xl mx-auto px-6 py-14 text-center">
+  <h1 class="text-4xl font-bold mb-4 leading-tight">
+    See What People <span class="text-red-600">Complain About</span><br>
+    Before You Decide
+  </h1>
+
+  <p class="text-slate-600 max-w-2xl mx-auto mb-8">
+    Search real complaints from public forums.  
+    No reviews. No promotions. Just what users actually say.
+  </p>
+
+  <!-- SEARCH -->
+  <form method="GET" class="max-w-2xl mx-auto flex gap-2">
+    <input
+      name="q"
+      value="{{ query or '' }}"
+      placeholder="Try: Airbnb, iPhone battery, Amazon delivery"
+      class="flex-1 p-4 rounded-lg border focus:outline-none focus:ring-2 focus:ring-slate-300"
+      required
+    >
+    <button class="bg-black text-white px-8 rounded-lg hover:bg-slate-800 transition">
+      Search
+    </button>
+  </form>
+
+  <!-- TRUST -->
+  <div class="flex justify-center gap-6 text-sm text-slate-500 mt-6">
+    <span>✔ Public sources</span>
+    <span>✔ No tracking</span>
+    <span>✔ No sign-up</span>
+  </div>
+</section>
+
+<!-- TOP AD -->
+<div class="max-w-4xl mx-auto px-6 mb-10">
+  <div class="border rounded-lg py-6 text-center text-xs text-slate-400 bg-white">
+    Advertisement
+    <!-- AdSense code -->
+  </div>
+</div>
+
+{% if complaints %}
+<!-- RESULTS -->
+<section class="max-w-6xl mx-auto px-6 pb-16">
+
+  <h2 class="text-2xl font-semibold mb-8">
+    Common Complaints About
+    <span class="text-red-600">“{{ query }}”</span>
+  </h2>
+
+  {% for category, items in complaints|groupby("category") %}
+  <div class="mb-12">
+
+    <!-- CATEGORY HEADER -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-bold text-red-600">
+        {{ category }}
+      </h3>
+      <span class="text-sm text-slate-500">
+        {{ items|length }} reports
+      </span>
+    </div>
+
+    <!-- MID AD -->
+    <div class="border rounded-lg py-4 text-center text-xs text-slate-400 bg-white mb-4">
+      Advertisement
+    </div>
+
+    <!-- COMPLAINT CARDS -->
+    <div class="grid md:grid-cols-2 gap-4">
+      {% for c in items %}
+      <div class="bg-white p-5 rounded-xl shadow-sm border hover:shadow-md transition">
+        <p class="font-semibold mb-2 leading-snug">
+          {{ c.title }}
+        </p>
+        <p class="text-sm text-slate-600 mb-3">
+          {{ c.excerpt }}...
+        </p>
+        <a href="{{ c.url }}" target="_blank"
+           class="text-sm text-blue-600 hover:underline">
+          View original source →
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<!-- FOOTER -->
+<footer class="bg-white border-t">
+  <div class="max-w-6xl mx-auto px-6 py-8 text-xs text-slate-500 leading-relaxed">
+    <p>
+      ComplaintSearch aggregates publicly available user opinions from third-party
+      platforms for informational purposes only. It does not verify claims or
+      assert factual accuracy. All content links to original sources.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
