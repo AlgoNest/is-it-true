@@ -29,7 +29,11 @@ def index():
             complaints=complaints
         )
     else:
-        return render_template("index.html")
+        return render_template(
+            "index.html",
+            query=query,
+            complaints=complaints
+        )
 
 if __name__ == "__main__":
     app.run(debug=True)
