@@ -68,7 +68,12 @@
     <span class="text-red-600">“{{ query }}”</span>
   </h2>
 
-  {% for category, items in complaints|groupby("category") %}
+  {% if complaints and complaints|length > 0 %}
+    {% for category, items in complaints|groupby("category") %}
+      ...
+      {% endfor %}
+  {% endif %}
+
   <div class="mb-12">
 
     <!-- CATEGORY HEADER -->
