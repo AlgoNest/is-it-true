@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if requests.method == "POST"
+    if request.method == "POST"
         query = request.form.get("query")
         complaints = []
     
