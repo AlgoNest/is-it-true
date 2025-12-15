@@ -28,7 +28,7 @@ def index():
             query=query,
             complaints=complaints
         )
-   else:
+    else:
         return render_template("index.html")
 
 if __name__ == "__main__":
