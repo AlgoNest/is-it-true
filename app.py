@@ -6,36 +6,34 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    # ALWAYS define defaults
-    query = ""
-    complaints = []
-
     if request.method == "POST":
         query = request.form.get("query", "").strip()
+        complaints = []
 
         if query:
-            try:
-                raw_results = search_complaints(query)
+            raw_results = search_complaints(query)
 
-                for r in raw_results:
-                    category = classify(r["title"] + " " + r["excerpt"])
-                    complaints.append({
-                        "title": r["title"],
-                        "excerpt": r["excerpt"],
-                        "url": r["url"],
-                        "source": r["source"],
-                        "category": category
-                    })
-            except Exception as e:
-                print("Search error:", e)
-                complaints = []
+            for r in raw_results:
+                category = classify(r["title"] + " " + r["excerpt"])
+                complaints.append({
+                    "title": r["title"],
+                    "excerpt": r["excerpt"],
+                    "url": r["url"],
+                    "source": r["source"],
+                    "category": category
+                })
 
+            # Sort for Jinja groupby
+            complaints.sort(key=lambda x: x["category"])
+
+            # Render results after POST
+            return render_template(
+                "index.html",
+                query=query,
+                complaints=complaints
+            )
+
+    # For GET request, render only the empty search page
     return render_template(
-        "index.html",
-        query=query,
-        complaints=complaints
+        "index.html"
     )
-
-
-
-
