@@ -6,34 +6,36 @@ app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    if request.method == "POST":
-        query = request.form.get("query")
-        complaints = []
-    
-        if query:
-            raw_results = search_complaints(query)
-    
-            for r in raw_results:
-                category = classify(r["title"] + " " + r["excerpt"])
-                complaints.append({
-                    "title": r["title"],
-                    "excerpt": r["excerpt"],
-                    "url": r["url"],
-                    "source": r["source"],
-                    "category": category
-                })
-    
-        return render_template(
-            "index.html",
-            query=query,
-            complaints=complaints
-        )
-    else:
-        return render_template(
-            "index.html",
-            query=query,
-            complaints=complaints
-        )
+    # ALWAYS define defaults
+    query = ""
+    complaints = []
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    if request.method == "POST":
+        query = request.form.get("query", "").strip()
+
+        if query:
+            try:
+                raw_results = search_complaints(query)
+
+                for r in raw_results:
+                    category = classify(r["title"] + " " + r["excerpt"])
+                    complaints.append({
+                        "title": r["title"],
+                        "excerpt": r["excerpt"],
+                        "url": r["url"],
+                        "source": r["source"],
+                        "category": category
+                    })
+            except Exception as e:
+                print("Search error:", e)
+                complaints = []
+
+    return render_template(
+        "index.html",
+        query=query,
+        complaints=complaints
+    )
+
+
+
+
