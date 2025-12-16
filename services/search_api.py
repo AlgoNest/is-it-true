@@ -1,7 +1,8 @@
 import requests
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (is-it-true-app)"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Accept": "application/json"
 }
 
 def search_complaints(query):
@@ -17,20 +18,19 @@ def search_complaints(query):
         params = {
             "q": term,
             "limit": 8,
-            "sort": "relevance"
+            "sort": "relevance",
+            "sr_detail": 1
         }
 
-        r = requests.get(
-            url,
-            headers=HEADERS,
-            params=params,
-            timeout=5
-        )
+        r = requests.get(url, headers=HEADERS, params=params, timeout=5)
 
         if r.status_code != 200:
             continue
 
-        data = r.json()
+        try:
+            data = r.json()
+        except ValueError:
+            continue
 
         for post in data.get("data", {}).get("children", []):
             p = post["data"]
