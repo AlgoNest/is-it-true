@@ -2,7 +2,7 @@ from flask import Flask, render_template, request
 from services.search_api import search_complaints
 from services.classify import classify
 
-app = Flask(__name__, template_folder="../templates")
+app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
