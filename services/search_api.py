@@ -1,7 +1,7 @@
 import requests
 
 HEADERS = {
-    "User-Agent": "is-it-true-app"
+    "User-Agent": "Mozilla/5.0 (is-it-true-app)"
 }
 
 def search_complaints(query):
