@@ -1,10 +1,8 @@
-import praw
+import requests
 
-reddit = praw.Reddit(
-    client_id="YOUR_CLIENT_ID",
-    client_secret="YOUR_CLIENT_SECRET",
-    user_agent="complaint-search-app"
-)
+HEADERS = {
+    "User-Agent": "is-it-true-app"
+}
 
 def search_complaints(query):
     results = []
@@ -15,13 +13,35 @@ def search_complaints(query):
     ]
 
     for term in search_terms:
-        for post in reddit.subreddit("all").search(term, limit=8):
-            if post.selftext and len(post.selftext) > 50:
+        url = "https://www.reddit.com/search.json"
+        params = {
+            "q": term,
+            "limit": 8,
+            "sort": "relevance"
+        }
+
+        r = requests.get(
+            url,
+            headers=HEADERS,
+            params=params,
+            timeout=5
+        )
+
+        if r.status_code != 200:
+            continue
+
+        data = r.json()
+
+        for post in data.get("data", {}).get("children", []):
+            p = post["data"]
+            text = p.get("selftext", "")
+
+            if len(text) > 50:
                 results.append({
-                    "title": post.title,
-                    "excerpt": post.selftext[:180],
-                    "url": f"https://reddit.com{post.permalink}",
+                    "title": p["title"],
+                    "excerpt": text[:180],
+                    "url": f"https://reddit.com{p['permalink']}",
                     "source": "Reddit"
                 })
 
-    return results[:25]  # hard limit for speed
+    return results[:25]
