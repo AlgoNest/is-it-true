@@ -2,7 +2,7 @@ from flask import Flask, render_template, request
 from services.search_api import search_complaints
 from services.classify import classify
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -23,17 +23,13 @@ def index():
                     "category": category
                 })
 
-            # Sort for Jinja groupby
             complaints.sort(key=lambda x: x["category"])
 
-            # Render results after POST
             return render_template(
                 "index.html",
                 query=query,
                 complaints=complaints
             )
 
-    # For GET request, render only the empty search page
-    return render_template(
-        "index.html"
-    )
+    return render_template("index.html")
+
