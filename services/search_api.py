@@ -22,7 +22,7 @@ COMPLAINT_HINTS = [
 ]
 
 # -------------------------------------------------
-# Extract REAL report text from a linked page
+# Extract real report text from a linked page
 # -------------------------------------------------
 def extract_report_text(url):
     try:
@@ -31,7 +31,6 @@ def extract_report_text(url):
             return None
 
         soup = BeautifulSoup(r.text, "html.parser")
-
         for tag in soup(["script", "style", "nav", "footer", "header"]):
             tag.decompose()
 
@@ -97,7 +96,7 @@ def search_reddit(query, max_results=15):
     return results[:max_results]
 
 # -------------------------------------------------
-# DuckDuckGo search (Discovery only)
+# DuckDuckGo search (HTML version)
 # -------------------------------------------------
 def search_duckduckgo(query, max_results=10):
     results = []
@@ -139,67 +138,7 @@ def search_duckduckgo(query, max_results=10):
     return results
 
 # -------------------------------------------------
-# Trustpilot
-# -------------------------------------------------
-def search_trustpilot(query, max_results=10):
-    results = []
-    search_url = f"https://www.trustpilot.com/search?query={query}"
-
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=8)
-        if r.status_code != 200:
-            return results
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        reviews = soup.select(".review-content")
-
-        for rev in reviews[:max_results]:
-            text = rev.get_text(" ", strip=True)
-            if len(text) > 100 and any(k in text.lower() for k in COMPLAINT_HINTS):
-                results.append({
-                    "title": f"{query} review",
-                    "excerpt": text[:200],
-                    "url": search_url,
-                    "source": "Trustpilot"
-                })
-
-    except Exception:
-        return results
-
-    return results
-
-# -------------------------------------------------
-# SiteJabber
-# -------------------------------------------------
-def search_sitejabber(query, max_results=10):
-    results = []
-    search_url = f"https://www.sitejabber.com/reviews/search?query={query}"
-
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=8)
-        if r.status_code != 200:
-            return results
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        reviews = soup.select(".review")
-
-        for rev in reviews[:max_results]:
-            text = rev.get_text(" ", strip=True)
-            if len(text) > 100 and any(k in text.lower() for k in COMPLAINT_HINTS):
-                results.append({
-                    "title": f"{query} review",
-                    "excerpt": text[:200],
-                    "url": search_url,
-                    "source": "SiteJabber"
-                })
-
-    except Exception:
-        return results
-
-    return results
-
-# -------------------------------------------------
-# ComplaintsBoard
+# ComplaintsBoard search
 # -------------------------------------------------
 def search_complaintsboard(query, max_results=10):
     results = []
@@ -229,11 +168,11 @@ def search_complaintsboard(query, max_results=10):
     return results
 
 # -------------------------------------------------
-# RipoffReport
+# SiteJabber search
 # -------------------------------------------------
-def search_ripoffreport(query, max_results=10):
+def search_sitejabber(query, max_results=10):
     results = []
-    search_url = f"https://www.ripoffreport.com/search?query={query}"
+    search_url = f"https://www.sitejabber.com/reviews/search?query={query}"
 
     try:
         r = requests.get(search_url, headers=HEADERS, timeout=8)
@@ -241,37 +180,7 @@ def search_ripoffreport(query, max_results=10):
             return results
 
         soup = BeautifulSoup(r.text, "html.parser")
-        complaints = soup.select(".report-summary")
-
-        for c in complaints[:max_results]:
-            text = c.get_text(" ", strip=True)
-            if len(text) > 100 and any(k in text.lower() for k in COMPLAINT_HINTS):
-                results.append({
-                    "title": f"{query} report",
-                    "excerpt": text[:200],
-                    "url": search_url,
-                    "source": "RipoffReport"
-                })
-
-    except Exception:
-        return results
-
-    return results
-
-# -------------------------------------------------
-# ConsumerAffairs
-# -------------------------------------------------
-def search_consumeraffairs(query, max_results=10):
-    results = []
-    search_url = f"https://www.consumeraffairs.com/search/?query={query}"
-
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=8)
-        if r.status_code != 200:
-            return results
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        reviews = soup.select(".rvw-bd")
+        reviews = soup.select(".review")
 
         for rev in reviews[:max_results]:
             text = rev.get_text(" ", strip=True)
@@ -280,7 +189,7 @@ def search_consumeraffairs(query, max_results=10):
                     "title": f"{query} review",
                     "excerpt": text[:200],
                     "url": search_url,
-                    "source": "ConsumerAffairs"
+                    "source": "SiteJabber"
                 })
 
     except Exception:
@@ -289,31 +198,32 @@ def search_consumeraffairs(query, max_results=10):
     return results
 
 # -------------------------------------------------
-# MAIN FUNCTION (DO NOT RENAME)
+# MAIN FUNCTION
 # -------------------------------------------------
-def search_complaints(query, max_total=40):
+def search_complaints(query, max_total=30):
     final_results = []
     seen_urls = set()
 
-    # Priority order: Reddit first, then other sources
     sources = [
         search_reddit,
-        search_trustpilot,
-        search_sitejabber,
+        search_duckduckgo,
         search_complaintsboard,
-        search_ripoffreport,
-        search_consumeraffairs,
-        search_duckduckgo
+        search_sitejabber
     ]
 
     for src in sources:
-        results = src(query, max_results=max_total)
+        try:
+            results = src(query, max_total)
+        except Exception:
+            results = []
+
         for r in results:
             if r["url"] not in seen_urls:
                 final_results.append(r)
                 seen_urls.add(r["url"])
             if len(final_results) >= max_total:
                 break
+
         if len(final_results) >= max_total:
             break
 
