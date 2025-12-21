@@ -6,63 +6,38 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
 }
 
+# Domains we don’t want to include
 BAD_DOMAINS = [
-    "duckduckgo.com",
-    "google.com",
-    "youtube.com",
-    "facebook.com",
-    "twitter.com",
-    "linkedin.com",
-    "instagram.com"
+    "google.com", "youtube.com", "facebook.com",
+    "twitter.com", "linkedin.com", "instagram.com"
 ]
 
-COMPLAINT_HINTS = [
-    "problem", "issue", "complaint", "refund", "scam",
-    "not working", "bad service", "poor", "delay", "fraud"
-]
-
-# -------------------------------------------------
-# Extract real report text from a linked page
-# -------------------------------------------------
+# -------------------------------
+# Extract text from a URL (fallback)
+# -------------------------------
 def extract_report_text(url):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=8)
-        if r.status_code != 200 or len(r.text) < 500:
+        r = requests.get(url, headers=HEADERS, timeout=6)
+        if r.status_code != 200:
             return None
-
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["script", "style", "nav", "footer", "header"]):
             tag.decompose()
-
-        blocks = soup.find_all(["article", "section", "div", "p"])
-        extracted = []
-
-        for b in blocks:
-            text = b.get_text(" ", strip=True)
-            if len(text) > 120 and any(h in text.lower() for h in COMPLAINT_HINTS):
-                extracted.append(text)
-
-        if not extracted:
+        text = soup.get_text(" ", strip=True)
+        if len(text) < 50:
             return None
-
-        return " ".join(extracted[:3])
-
+        return text[:250]
     except Exception:
         return None
 
-# -------------------------------------------------
+# -------------------------------
 # Reddit search
-# -------------------------------------------------
+# -------------------------------
 def search_reddit(query, max_results=15):
     results = []
-    terms = [
-        f"{query} problem",
-        f"{query} issue",
-        f"{query} complaint",
-        f"{query} scam"
-    ]
+    search_terms = [f"{query} problem", f"{query} issue", f"{query} complaint", f"{query} scam"]
 
-    for term in terms:
+    for term in search_terms:
         try:
             r = requests.get(
                 "https://www.reddit.com/search.json",
@@ -72,7 +47,6 @@ def search_reddit(query, max_results=15):
             )
             if r.status_code != 200:
                 continue
-
             data = r.json()
         except Exception:
             continue
@@ -80,31 +54,51 @@ def search_reddit(query, max_results=15):
         for post in data.get("data", {}).get("children", []):
             p = post.get("data", {})
             text = p.get("selftext", "")
-            if len(text) < 80:
-                continue
-
             results.append({
                 "title": p.get("title"),
-                "excerpt": text[:200],
+                "excerpt": text[:200] if text else "See full post",
                 "url": f"https://reddit.com{p.get('permalink')}",
                 "source": "Reddit"
             })
-
         if len(results) >= max_results:
             break
 
     return results[:max_results]
 
-# -------------------------------------------------
-# DuckDuckGo search (HTML version)
-# -------------------------------------------------
+# -------------------------------
+# Hacker News search
+# -------------------------------
+def search_hn(query, max_results=10):
+    results = []
+    url = f"https://hn.algolia.com/api/v1/search?query={query}&tags=story&hitsPerPage={max_results}"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code != 200:
+            return results
+        data = r.json()
+    except Exception:
+        return results
+
+    for hit in data.get("hits", []):
+        title = hit.get("title")
+        url_hit = hit.get("url") or f"https://news.ycombinator.com/item?id={hit.get('objectID')}"
+        results.append({
+            "title": title,
+            "excerpt": title[:200] if title else "Hacker News post",
+            "url": url_hit,
+            "source": "Hacker News"
+        })
+    return results
+
+# -------------------------------
+# DuckDuckGo HTML search
+# -------------------------------
 def search_duckduckgo(query, max_results=10):
     results = []
     params = {"q": f"{query} complaint problem issue", "kl": "us-en"}
     url = "https://html.duckduckgo.com/html/?" + urlencode(params)
-
     try:
-        r = requests.get(url, headers=HEADERS, timeout=8)
+        r = requests.get(url, headers=HEADERS, timeout=6)
         if r.status_code != 200:
             return results
 
@@ -114,102 +108,34 @@ def search_duckduckgo(query, max_results=10):
         for link in links:
             href = link.get("href")
             title = link.get_text(strip=True)
-
             if not href or any(bad in href for bad in BAD_DOMAINS):
                 continue
 
-            report = extract_report_text(href)
-            if not report:
-                continue
+            text = extract_report_text(href)
+            if not text:
+                text = "Click link to view report"
 
             results.append({
                 "title": title,
-                "excerpt": report[:200],
+                "excerpt": text[:200],
                 "url": href,
                 "source": "Web"
             })
-
             if len(results) >= max_results:
                 break
-
     except Exception:
         return results
 
     return results
 
-# -------------------------------------------------
-# ComplaintsBoard search
-# -------------------------------------------------
-def search_complaintsboard(query, max_results=10):
-    results = []
-    search_url = f"https://www.complaintsboard.com/search?query={query}"
-
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=8)
-        if r.status_code != 200:
-            return results
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        complaints = soup.select(".postcontent")
-
-        for c in complaints[:max_results]:
-            text = c.get_text(" ", strip=True)
-            if len(text) > 100 and any(k in text.lower() for k in COMPLAINT_HINTS):
-                results.append({
-                    "title": f"{query} complaint",
-                    "excerpt": text[:200],
-                    "url": search_url,
-                    "source": "ComplaintsBoard"
-                })
-
-    except Exception:
-        return results
-
-    return results
-
-# -------------------------------------------------
-# SiteJabber search
-# -------------------------------------------------
-def search_sitejabber(query, max_results=10):
-    results = []
-    search_url = f"https://www.sitejabber.com/reviews/search?query={query}"
-
-    try:
-        r = requests.get(search_url, headers=HEADERS, timeout=8)
-        if r.status_code != 200:
-            return results
-
-        soup = BeautifulSoup(r.text, "html.parser")
-        reviews = soup.select(".review")
-
-        for rev in reviews[:max_results]:
-            text = rev.get_text(" ", strip=True)
-            if len(text) > 100 and any(k in text.lower() for k in COMPLAINT_HINTS):
-                results.append({
-                    "title": f"{query} review",
-                    "excerpt": text[:200],
-                    "url": search_url,
-                    "source": "SiteJabber"
-                })
-
-    except Exception:
-        return results
-
-    return results
-
-# -------------------------------------------------
-# MAIN FUNCTION
-# -------------------------------------------------
+# -------------------------------
+# MAIN SEARCH FUNCTION
+# -------------------------------
 def search_complaints(query, max_total=30):
     final_results = []
     seen_urls = set()
 
-    sources = [
-        search_reddit,
-        search_duckduckgo,
-        search_complaintsboard,
-        search_sitejabber
-    ]
+    sources = [search_reddit, search_hn, search_duckduckgo]
 
     for src in sources:
         try:
